@@ -60,3 +60,9 @@ jobs:
   # TODO: Add sonarcloud job
   # Hint: Use the SonarSource/sonarqube-scan-action or sonarcloud-github-action
   # You will need to configure sonar-project.properties
+
+  # TODO: Add vulnerability-scan job using govulncheck
+  # Hint: Install with "go install golang.org/x/vuln/cmd/govulncheck@latest"
+
+  # TODO: Add trivy-scan job for Docker image vulnerability scanning
+  # Hint: Use aquasecurity/trivy-action@master after the docker-build job
