@@ -132,7 +132,21 @@ The CI workflow already has a matrix strategy with one Go version. Your tasks:
 
    > **Note:** This approach uses `go tool cover -func` and standard POSIX tools (`awk`, `sed`, `bc`), which work on both Linux and macOS runners.
 
-**Deliverable:** Coverage report showing >= 80%. Updated tests.
+4. **Upload a coverage HTML report** as a build artifact so it can be downloaded from the Actions run:
+   ```yaml
+   - name: Generate coverage HTML report
+     run: go tool cover -html=coverage.out -o coverage.html
+
+   - name: Upload coverage artifacts
+     uses: actions/upload-artifact@v4
+     with:
+       name: coverage-report
+       path: |
+         coverage.out
+         coverage.html
+   ```
+
+**Deliverable:** Coverage report showing >= 80%. Updated tests. Coverage HTML artifact downloadable from the Actions run.
 
 ---
 
