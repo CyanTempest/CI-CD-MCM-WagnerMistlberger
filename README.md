@@ -98,23 +98,18 @@ if err != ErrNotFound {
 
 **Table-driven tests** (test multiple cases in one function):
 ```go
-func TestValidation(t *testing.T) {
+func TestSomething(t *testing.T) {
     tests := []struct {
-        name    string
-        product model.Product
-        want    bool
+        name string
+        // ... add fields for input and expected output
     }{
-        {"valid product", model.Product{Name: "X", Price: 1.0}, true},
-        {"empty name", model.Product{Name: "", Price: 1.0}, false},
-        {"negative price", model.Product{Name: "X", Price: -1.0}, false},
+        {"case 1", /* ... */},
+        {"case 2", /* ... */},
     }
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            got := tt.product.Validate()
-            if got != tt.want {
-                t.Errorf("%s: got %v, want %v", tt.name, got, tt.want)
-            }
+            // Arrange, Act, Assert for each test case
         })
     }
 }
