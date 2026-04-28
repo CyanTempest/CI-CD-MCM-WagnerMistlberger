@@ -2,13 +2,9 @@ name: CI
 
 on:
   push:
-    branches: 
-      - main
-      - 'exercise/**'  
+    branches: [ "main", "exercise/02-microservice-docker" ]
   pull_request:
-    branches: 
-      - main
-      - 'exercise/**'
+    branches: [ "main" ]
 
 jobs:
   test:
