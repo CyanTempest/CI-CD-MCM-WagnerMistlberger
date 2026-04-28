@@ -1,4 +1,4 @@
-![CI Status](https://github.com/CyanTempest/CI-CD-MCM-WagnerMistlberger/actions/workflows/ci.yml/badge.svg)
+![CI Status](https://github.com/CyanTempest/CI-CD-MCM-WagnerMistlberger/blob/exercise/02-microservice-docker/.github/workflows/ci.yml/badge.svg)
 
 # Exercise 2: Microservice Architecture, Docker & GitHub Actions
 
