@@ -9,10 +9,10 @@ on:
     branches: 
       - main
       - 'exercise/**'
+
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +33,6 @@ jobs:
   docker-build:
     needs: test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
