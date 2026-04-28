@@ -1,6 +1,6 @@
 # Product Catalog API
 
-![CI Status](https://github.com/CyanTempest/CI-CD-MCM-WagnerMistlberger/actions/workflows/ci.yml/badge.svg)
+[![CI Status](https://github.com/CyanTempest/CI-CD-MCM-WagnerMistlberger/actions/workflows/ci.yml/badge.svg?branch=exercise/02-microservice-docker)](https://github.com/CyanTempest/CI-CD-MCM-WagnerMistlberger/actions?query=workflow%3ACI+branch%3Aexercise/02-microservice-docker)
 
 # Exercise 2: Microservice Architecture, Docker & GitHub Actions
 
