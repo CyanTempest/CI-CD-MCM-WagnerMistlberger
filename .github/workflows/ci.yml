@@ -8,13 +8,10 @@ on:
 
 jobs:
   test:
-    # Nutzt das Betriebssystem aus der Matrix
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # Task 1.1: Go-Versionen 1.25 und 1.26
         go-version: ["1.25", "1.26"]
-        # Task 1.3: Betriebssystem-Matrix (Linux und macOS)
         os: [ubuntu-latest, macos-latest]
 
     steps:
@@ -31,46 +28,50 @@ jobs:
       - name: Run tests with coverage
         run: go test -v -coverprofile=coverage.out ./...
 
-      - name: Upload coverage artifact
+      - name: Filter coverage report
+        shell: bash
+        run: |
+          grep -v -E "postgres|main.go" coverage.out > coverage_filtered.out
+
+      - name: Check coverage threshold
+        shell: bash
+        run: |
+          COVERAGE=$(go tool cover -func=coverage_filtered.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Filtered coverage is: $COVERAGE%"
+          
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::error::Code coverage is too low: $COVERAGE% (Required: 80%)"
+            exit 1
+          fi
+
+      - name: Generate HTML report
+        run: go tool cover -html=coverage_filtered.out -o coverage.html
+
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          # Name angepasst, damit sich die Files von ubuntu/macos nicht überschreiben
           name: coverage-${{ matrix.os }}-${{ matrix.go-version }}
-          path: coverage.out
+          path: |
+            coverage_filtered.out
+            coverage.out
+            coverage.html
 
       - name: Build
         run: go build -o api-server ./cmd/api
 
-  docker-build:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: product-catalog:${{ github.sha }}
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
+
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
@@ -86,9 +87,22 @@ jobs:
           name: coverage-ubuntu-latest-1.26
           path: .
 
- 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: product-catalog:${{ github.sha }}

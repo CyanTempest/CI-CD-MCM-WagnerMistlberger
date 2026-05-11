@@ -134,3 +134,38 @@ func TestCreateInvalidProduct(t *testing.T) {
 		t.Errorf("expected 400 Bad Request for invalid payload, got %d", rr.Code)
 	}
 }
+
+// Task 4: Tests für Edge-Cases (Error Paths)
+
+func TestCreateProductMalformedJSON(t *testing.T) {
+	r, _ := setupRouter()
+	// Ungültiges JSON (fehlende Klammer)
+	body := `{"name":"Broken", "price": 10.0`
+	req := httptest.NewRequest("POST", "/products", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rr.Code)
+	}
+}
+
+func TestUpdateProductNotFound(t *testing.T) {
+	r, _ := setupRouter()
+	body := `{"name":"Non-existent","price":15.0}`
+	req := httptest.NewRequest("PUT", "/products/9999", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rr.Code)
+	}
+}
+
+func TestDeleteProductNotFound(t *testing.T) {
+	r, _ := setupRouter()
+	req := httptest.NewRequest("DELETE", "/products/9999", nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rr.Code)
+	}
+}
