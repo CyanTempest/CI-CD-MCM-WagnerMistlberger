@@ -12,15 +12,17 @@ linters:
     - unused
     - ineffassign
     - gosimple
-    # TODO: Enable additional linters:
-    # - gofmt
-    # - gocyclo
-    # - misspell
-    # - gocritic
+    # Task 2.2: Zusätzliche Linters aktiviert
+    - gofmt
+    - gocyclo
+    - misspell
+    - gocritic
 
 linters-settings:
   errcheck:
     check-type-assertions: true
+  gocyclo:
+    min-complexity: 15
 
 issues:
   exclude-rules:
