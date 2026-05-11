@@ -8,11 +8,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Nutzt das Betriebssystem aus der Matrix
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: ["1.26"]
-        # TODO: Add go-version "1.25" to the matrix for multi-version testing
+        # Task 1.1: Go-Versionen 1.25 und 1.26
+        go-version: ["1.25", "1.26"]
+        # Task 1.3: Betriebssystem-Matrix (Linux und macOS)
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -31,14 +34,12 @@ jobs:
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.go-version }}
+          # Name angepasst, damit sich die Files von ubuntu/macos nicht überschreiben
+          name: coverage-${{ matrix.os }}-${{ matrix.go-version }}
           path: coverage.out
 
       - name: Build
         run: go build -o api-server ./cmd/api
-
-  # TODO: Add lint job using golangci-lint
-  # Hint: Use the golangci/golangci-lint-action@v4 action
 
   docker-build:
     runs-on: ubuntu-latest
