@@ -1,3 +1,5 @@
+![CI Status](https://github.com/CyanTempest/CI-CD-MCM-WagnerMistlberger/actions/workflows/ci.yml/badge.svg?branch=exercise%2F02-microservice-docker)
+
 # Continuous Delivery in Agile Software Development -- Exercises
 
 This repository contains four progressive exercises for the Master course **Continuous Delivery in Agile Software Development**.
