@@ -108,3 +108,21 @@ func TestDeleteNonExistent(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestUpdateNonExistent(t *testing.T) {
+	s := NewMemoryStore()
+	_, err := s.Update(999, model.Product{Name: "Fail"})
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestGetAllPopulated(t *testing.T) {
+	s := NewMemoryStore()
+	s.Create(model.Product{Name: "P1"})
+	s.Create(model.Product{Name: "P2"})
+	products := s.GetAll()
+	if len(products) != 2 {
+		t.Errorf("expected 2 products, got %d", len(products))
+	}
+}
