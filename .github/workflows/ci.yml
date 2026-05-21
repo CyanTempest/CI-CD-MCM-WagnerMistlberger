@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.25", "1.26"] # Matrix für Multi-Version Testing hinzugefügt
+        go-version: ["1.25", "1.26"]
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
         run: go mod download
 
       - name: Run tests with coverage
-        run: go test -v -coverpkg=./... -coverprofile=coverage.out ./...
+        run: go test -v -coverprofile=coverage.out ./...
 
       - name: Filter coverage report
         shell: bash
@@ -107,7 +107,6 @@ jobs:
           context: .
           push: false
           tags: product-catalog:${{ github.sha }}
-          # Exportiert das Image als tar-Archiv für den Trivy-Job
           outputs: type=docker,dest=/tmp/product-catalog.tar
 
       - name: Upload Docker image artifact
@@ -116,7 +115,6 @@ jobs:
           name: docker-image
           path: /tmp/product-catalog.tar
 
-  # Task 1: Trivy scan job
   trivy-scan:
     runs-on: ubuntu-latest
     needs: docker-build 
@@ -133,7 +131,6 @@ jobs:
       - name: Load Docker image
         run: docker load --input /tmp/product-catalog.tar
 
-      # Scant das Image, gibt eine Table aus und bricht bei CRITICAL oder HIGH ab (exit-code: 1)
       - name: Run Trivy vulnerability scanner (Table format)
         uses: aquasecurity/trivy-action@master
         with:
@@ -142,16 +139,14 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
-      # Generiert den geforderten JSON-Report
       - name: Generate Trivy JSON Report
-        if: always() # Wird immer ausgeführt, auch wenn der obere Schritt fehlschlägt
+        if: always()
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'product-catalog:${{ github.sha }}'
           format: 'json'
           output: 'trivy-report.json'
 
-      # Lädt den JSON-Report als Build-Artefakt hoch
       - name: Upload Trivy Scan JSON Report
         if: always()
         uses: actions/upload-artifact@v4
