@@ -2,9 +2,9 @@
 
 **Scaling Screenshot:** Scale the API deployment to 3 replicas and verify all pods are running:
 
-![image-20260521142041109](/images/screenshot1)
+![image-20260521142041109](images/screenshot1.png)
 
-![image-20260521142112839](/images/screenshot2)
+![image-20260521142112839](images/screenshot2.png)
 
 **Health Checks questions:**
 
