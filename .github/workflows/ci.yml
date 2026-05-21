@@ -35,6 +35,7 @@ jobs:
       - name: Check coverage threshold
         shell: bash
         run: |
+          # Berechnet das Total direkt auf Basis der gefilterten Einzelstatements
           COVERAGE=$(go tool cover -func=coverage_filtered.out | grep total | awk '{print $3}' | sed 's/%//')
           echo "Filtered coverage is: $COVERAGE%"
           
