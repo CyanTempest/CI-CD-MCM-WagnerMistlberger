@@ -35,20 +35,22 @@ jobs:
       - name: Check coverage threshold
         shell: bash
         run: |
-          # Rechnet die echten abgedeckten Code-Blöcke direkt mathematisch zusammen
-          # Spalte 2 enthält die Anzahl der Statements, Spalte 3 ist 1 (abgedeckt) oder 0 (nicht abgedeckt)
+          # Ein absolut sicherer mathematischer Parser für die Rohdaten
           COVERAGE=$(awk '
-            NR>1 {
-              split($1, a, ":");
-              # Wir überspringen postgres und main.go vollständig bei der mathematischen Summe
-              if (a[1] !~ /postgres/ && a[1] !~ /main.go/) {
-                total += $2;
-                if ($3 > 0) covered += $2;
+            BEGIN { total = 0; covered = 0; }
+            # Überspringe die erste Zeile ("mode: set") und alle Zeilen mit postgres oder main.go
+            NR > 1 && $0 !~ /postgres/ && $0 !~ /main\.go/ {
+              total += $2;
+              if ($3 > 0) {
+                covered += $2;
               }
             }
             END {
-              if (total > 0) printf "%.1f", (covered / total) * 100;
-              else print "0.0";
+              if (total > 0) {
+                printf "%.1f", (covered / total) * 100;
+              } else {
+                print "0.0";
+              }
             }
           ' coverage.out)
 
