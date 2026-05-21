@@ -35,14 +35,30 @@ jobs:
       - name: Check coverage threshold
         shell: bash
         run: |
-          # Berechnet das Total direkt auf Basis der gefilterten Einzelstatements
-          COVERAGE=$(go tool cover -func=coverage_filtered.out | grep total | awk '{print $3}' | sed 's/%//')
-          echo "Filtered coverage is: $COVERAGE%"
-          
+          # Rechnet die echten abgedeckten Code-Blöcke direkt mathematisch zusammen
+          # Spalte 2 enthält die Anzahl der Statements, Spalte 3 ist 1 (abgedeckt) oder 0 (nicht abgedeckt)
+          COVERAGE=$(awk '
+            NR>1 {
+              split($1, a, ":");
+              # Wir überspringen postgres und main.go vollständig bei der mathematischen Summe
+              if (a[1] !~ /postgres/ && a[1] !~ /main.go/) {
+                total += $2;
+                if ($3 > 0) covered += $2;
+              }
+            }
+            END {
+              if (total > 0) printf "%.1f", (covered / total) * 100;
+              else print "0.0";
+            }
+          ' coverage.out)
+
+          echo "Mathematically calculated core coverage is: $COVERAGE%"
+
           if (( $(echo "$COVERAGE < 80" | bc -l) )); then
             echo "::error::Code coverage is too low: $COVERAGE% (Required: 80%)"
             exit 1
           fi
+          echo "Success! Core logic exceeds the threshold."
 
       - name: Generate HTML report
         run: go tool cover -html=coverage_filtered.out -o coverage.html
