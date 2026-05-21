@@ -25,9 +25,8 @@ jobs:
         run: go mod download
 
       - name: Run tests with coverage
-        run: go test -v -coverprofile=coverage.out ./...
+        run: go test -v -coverpkg=./... -coverprofile=coverage.out ./...
 
-      # Behält dein funktionierendes Coverage-Filtering für die 97% bei
       - name: Filter coverage report
         shell: bash
         run: |
