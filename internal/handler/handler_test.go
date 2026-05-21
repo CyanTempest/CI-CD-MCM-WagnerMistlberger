@@ -77,4 +77,95 @@ func TestGetProductNotFound(t *testing.T) {
 	}
 }
 
-// TODO: Add tests for UpdateProduct, DeleteProduct, and invalid payloads
+// Added tests for Task 4
+
+func TestUpdateProduct(t *testing.T) {
+	r, _ := setupRouter()
+
+	createBody := `{"name":"Old Product","price":10.00}`
+	req := httptest.NewRequest("POST", "/products", strings.NewReader(createBody))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	updateBody := `{"name":"Updated Product","price":15.00}`
+	req = httptest.NewRequest("PUT", "/products/1", strings.NewReader(updateBody))
+	rr = httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %d", rr.Code)
+	}
+}
+
+func TestDeleteProduct(t *testing.T) {
+	r, _ := setupRouter()
+
+	body := `{"name":"To Be Deleted","price":5.00}`
+	req := httptest.NewRequest("POST", "/products", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	req = httptest.NewRequest("DELETE", "/products/1", nil)
+	rr = httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK && rr.Code != http.StatusNoContent {
+		t.Errorf("expected 200 or 204, got %d", rr.Code)
+	}
+
+	req = httptest.NewRequest("GET", "/products/1", nil)
+	rr = httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404 Not Found after deletion, got %d", rr.Code)
+	}
+}
+
+func TestCreateInvalidProduct(t *testing.T) {
+	r, _ := setupRouter()
+
+	body := `{"name":"","price":9.99}`
+	req := httptest.NewRequest("POST", "/products", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request for invalid payload, got %d", rr.Code)
+	}
+}
+
+// Task 4: Tests für Edge-Cases (Error Paths)
+
+func TestCreateProductMalformedJSON(t *testing.T) {
+	r, _ := setupRouter()
+	// Ungültiges JSON (fehlende Klammer)
+	body := `{"name":"Broken", "price": 10.0`
+	req := httptest.NewRequest("POST", "/products", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rr.Code)
+	}
+}
+
+func TestUpdateProductNotFound(t *testing.T) {
+	r, _ := setupRouter()
+	body := `{"name":"Non-existent","price":15.0}`
+	req := httptest.NewRequest("PUT", "/products/9999", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rr.Code)
+	}
+}
+
+func TestDeleteProductNotFound(t *testing.T) {
+	r, _ := setupRouter()
+	req := httptest.NewRequest("DELETE", "/products/9999", nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rr.Code)
+	}
+}
