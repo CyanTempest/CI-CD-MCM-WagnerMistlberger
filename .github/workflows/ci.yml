@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
     branches: [main]
 
@@ -11,8 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.26"]
-        # TODO: Add go-version "1.25" to the matrix for multi-version testing
+        go-version: ["1.25", "1.26"] # Matrix für Multi-Version Testing hinzugefügt
 
     steps:
       - uses: actions/checkout@v4
@@ -28,22 +27,75 @@ jobs:
       - name: Run tests with coverage
         run: go test -v -coverprofile=coverage.out ./...
 
-      - name: Upload coverage artifact
+      # Behält dein funktionierendes Coverage-Filtering für die 97% bei
+      - name: Filter coverage report
+        shell: bash
+        run: |
+          grep -v -E "postgres|main.go" coverage.out > coverage_filtered.out
+
+      - name: Check coverage threshold
+        shell: bash
+        run: |
+          COVERAGE=$(go tool cover -func=coverage_filtered.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Filtered coverage is: $COVERAGE%"
+          
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::error::Code coverage is too low: $COVERAGE% (Required: 80%)"
+            exit 1
+          fi
+
+      - name: Generate HTML report
+        run: go tool cover -html=coverage_filtered.out -o coverage.html
+
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ matrix.go-version }}
-          path: coverage.out
+          path: |
+            coverage_filtered.out
+            coverage.out
+            coverage.html
 
       - name: Build
         run: go build -o api-server ./cmd/api
 
-  # TODO: Add lint job using golangci-lint
-  # Hint: Use the golangci/golangci-lint-action@v4 action
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-1.26
+          path: .
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docker-build:
     runs-on: ubuntu-latest
     needs: test
-
     steps:
       - uses: actions/checkout@v4
 
@@ -56,13 +108,54 @@ jobs:
           context: .
           push: false
           tags: product-catalog:${{ github.sha }}
+          # Exportiert das Image als tar-Archiv für den Trivy-Job
+          outputs: type=docker,dest=/tmp/product-catalog.tar
 
-  # TODO: Add sonarcloud job
-  # Hint: Use the SonarSource/sonarqube-scan-action or sonarcloud-github-action
-  # You will need to configure sonar-project.properties
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/product-catalog.tar
 
-  # TODO: Add vulnerability-scan job using govulncheck
-  # Hint: Install with "go install golang.org/x/vuln/cmd/govulncheck@latest"
+  # Task 1: Trivy scan job
+  trivy-scan:
+    runs-on: ubuntu-latest
+    needs: docker-build 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # TODO: Add trivy-scan job for Docker image vulnerability scanning
-  # Hint: Use aquasecurity/trivy-action@master after the docker-build job
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Load Docker image
+        run: docker load --input /tmp/product-catalog.tar
+
+      # Scant das Image, gibt eine Table aus und bricht bei CRITICAL oder HIGH ab (exit-code: 1)
+      - name: Run Trivy vulnerability scanner (Table format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'product-catalog:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      # Generiert den geforderten JSON-Report
+      - name: Generate Trivy JSON Report
+        if: always() # Wird immer ausgeführt, auch wenn der obere Schritt fehlschlägt
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'product-catalog:${{ github.sha }}'
+          format: 'json'
+          output: 'trivy-report.json'
+
+      # Lädt den JSON-Report als Build-Artefakt hoch
+      - name: Upload Trivy Scan JSON Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-security-report
+          path: trivy-report.json

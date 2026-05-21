@@ -9,10 +9,9 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api-server ./cmd/api
 
-# Runtime stage
-FROM alpine:3.19
+# MODIFIZIERTE Runtime stage (Task 1.4)
 
-RUN apk --no-cache add ca-certificates
+FROM gcr.io/distroless/static-debian12:latest
 
 WORKDIR /app
 COPY --from=builder /api-server .
